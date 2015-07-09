@@ -19,14 +19,13 @@ To build s2n with LibreSSL, do the following:
 cd libcrypto-build
 
 # Download the latest version of LibreSSL
-curl http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-x.y.z.tar.gz > libressl-x.y.z.tar.gz
+curl -O http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-x.y.z.tar.gz
 tar -xzvf libressl-x.y.z.tar.gz
 
 # Build LibreSSL's libcrypto
 cd libressl-x.y.z
 ./configure --prefix=`pwd`/../../libcrypto-root/
-make
-make install
+make CFLAGS=-fPIC install
 
 # Make to the main s2n directory
 cd ../../
@@ -80,11 +79,11 @@ To build s2n with OpenSSL-1.0.2, do the following:
 cd libcrypto-build
 
 # Download the latest version of OpenSSL
-curl https://www.openssl.org/source/openssl-1.0.2-latest.tar.gz > openssl-1.0.2.tar.gz
-tar -xzvf openssl-1.0.2.tar.gz
+curl -O https://www.openssl.org/source/openssl-1.0.2-latest.tar.gz
+tar -xzvf openssl-1.0.2-latest.tar.gz
 
-# Build openssl' libcrypto
-cd openssl-1.0.2
+# Build openssl' libcrypto  (NOTE: check directory name 1.0.2-latest unpacked as)
+cd openssl-1.0.2c
 ./config -fPIC no-shared no-libunbound no-gmp no-jpake no-krb5              \
          no-md2 no-rc5 no-rfc3779 no-sctp no-ssl-trace no-store no-zlib     \
          no-hw no-mdc2 no-seed no-idea enable-ec-nist_64_gcc_128 no-camellia\
@@ -92,7 +91,7 @@ cd openssl-1.0.2
          -DSSL_FORBID_ENULL -DOPENSSL_NO_DTLS1 -DOPENSSL_NO_HEARTBEATS      \
          --prefix=`pwd`/../../libcrypto-root/
 make depend
-make -j 32
+make
 make install
 
 # Make to the main s2n directory
@@ -180,9 +179,10 @@ about encrypted data. By default s2n will cause a thread to sleep between 1ms an
 
 Setting the **S2N_SELF_SERVICE_BLINDING** option with **s2n_connection_set_blinding**
 turns off this behavior. This is useful for applications that are handling many connections
-in a single thread. In that case, if s2n_recv() returns an error, self-service applications 
-should call **s2n_connection_get_delay** and pause activity on the connection 
-for the specified number of microseconds before calling close() or shutdown().
+in a single thread. In that case, if s2n_recv() or s2n_negotiate() return an error, 
+self-service applications should call **s2n_connection_get_delay** and pause 
+activity on the connection  for the specified number of microseconds before calling
+close() or shutdown().
 
 ```c
 typedef enum { S2N_STATUS_REQUEST_NONE, S2N_STATUS_REQUEST_OCSP } s2n_status_request_type;
@@ -299,7 +299,7 @@ certificate-chain/key pair may be associated with a config.
 certificate in the chain being your servers certificate. **private_key_pem**
 should be a PEM encoded private key corresponding to the server certificate.
 
-### s2n\_config\_add\_cert\_chain\_\_and\_key\_with\_status
+### s2n\_config\_add\_cert\_chain\_and\_key\_with\_status
 
 ```c
 int s2n_config_add_cert_chain_and_key_with_status(struct s2n_config *config, 
